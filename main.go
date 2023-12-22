@@ -34,15 +34,28 @@ func BuildApp(sfile string) {
 		if string(byteValue[i:i+1]) == "\n" {
 			xline := strings.TrimLeft(line, " ")
 			ld := strings.Split(xline, " ")
+			lda := strings.Split(ld[0], "(")
+			lpn := false
+			if len(ld[0]) > 0 {
+				if ld[0][0:1] == "?" {
+					lpn = true
+				}
+
+			}
+
 			fmt.Printf(" Line Segmnets %d %s \n ", len(ld), line)
 			switch {
-			case ld[0] == "procedure":
+			case ld[0] == "procedure" || ld[0] == "function":
 				fun = true
 				goFile = goFile + "func " + ld[1] + " {\n"
 				ftmp := strings.Split(ld[1], "(")
 				funname = ftmp[0]
 
-			case ld[0] == "?":
+			case ld[0] == "return" || lda[0] == "return":
+				fun = false
+				goFile = goFile + "}\n"
+
+			case ld[0] == "?" || lpn == true:
 				fmtctl = true
 				goFile = goFile + strings.Repeat(" ", 4)
 				goFile = goFile + "fmt.Println("
