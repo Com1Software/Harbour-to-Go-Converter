@@ -59,7 +59,11 @@ func BuildApp(sfile string) {
 							goFile = goFile + ld[ii]
 						} else {
 							dtype := "string"
-							goFile = goFile + ld[ii][0:len(ld[ii])-1] + " " + dtype
+							if ld[ii][len(ld[ii])-1:len(ld[ii])] == "," {
+								goFile = goFile + ld[ii][0:len(ld[ii])-1] + " " + dtype
+							} else {
+								goFile = goFile + ld[ii][0:len(ld[ii])] + " " + dtype
+							}
 							if ii < len(ld)-2 {
 								goFile = goFile + ", "
 							}
@@ -95,7 +99,11 @@ func BuildApp(sfile string) {
 							} else {
 								if ii < len(ld)-1 {
 									dtype := "string"
-									goFile = goFile + ld[ii][0:len(ld[ii])-1] + " " + dtype
+									if ld[ii][len(ld[ii])-1:len(ld[ii])] == "," {
+										goFile = goFile + ld[ii][0:len(ld[ii])-1] + " " + dtype
+									} else {
+										goFile = goFile + ld[ii][0:len(ld[ii])] + " " + dtype
+									}
 									if ii < len(ld)-2 {
 										goFile = goFile + ", "
 									}
