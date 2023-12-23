@@ -30,6 +30,7 @@ func BuildApp(sfile string) {
 	fun := false
 	lineExtend := false
 	funname := ""
+	rtn := ""
 	for i := 0; i < len(byteValue); i++ {
 		if string(byteValue[i:i+1]) != "\n" {
 
@@ -49,6 +50,7 @@ func BuildApp(sfile string) {
 
 			fmt.Printf(" Line Segmnets %d %s \n ", len(ld), line)
 			switch {
+			//------------------------------------------------------------- EXTENTED LINE
 			case lineExtend == true:
 				goFile = goFile + strings.Repeat(" ", 4)
 				for ii := 1; ii < len(ld); ii++ {
@@ -76,6 +78,7 @@ func BuildApp(sfile string) {
 				} else {
 					goFile = goFile + " {\n"
 				}
+				//--------------------------------------------------------- FUNCTION
 			case ld[0] == "procedure" || ld[0] == "function":
 				fun = true
 				ftmp := strings.Split(ld[1], "(")
@@ -85,6 +88,7 @@ func BuildApp(sfile string) {
 					mainset = true
 					lineExtend = false
 				}
+				rtn = detrmineReturn(byteValue, funname)
 				goFile = goFile + "func " + funname + "("
 				if mainctl {
 					goFile = goFile + ")"
@@ -113,16 +117,24 @@ func BuildApp(sfile string) {
 						}
 					}
 				}
+				if len(rtn) > 0 {
+					dtype := "string"
+					goFile = goFile + " " + dtype
+				}
 				if lineExtend {
 					goFile = goFile + "\n"
 				} else {
 					goFile = goFile + " {\n"
 				}
+				//------------------------------------------------------------------ RETURN
 			case ld[0] == "return" || lda[0] == "return":
 				fun = false
 				mainctl = false
+				goFile = goFile + strings.Repeat(" ", 4)
+				goFile = goFile + "return\n"
 				goFile = goFile + "}\n\n"
 
+				//------------------------------------------------------------------ LOCAL
 			case ld[0] == "local":
 				if len(ld) > 2 {
 					goFile = goFile + strings.Repeat(" ", 4)
@@ -143,6 +155,7 @@ func BuildApp(sfile string) {
 					fmt.Printf("Warning  Local variable %S did NOT convert\n", ld[1])
 
 				}
+				//------------------------------------------------------------------ ? PRINT
 			case ld[0] == "?" || lpn == true:
 				fmtctl = true
 				goFile = goFile + strings.Repeat(" ", 4)
@@ -200,6 +213,42 @@ func BuildApp(sfile string) {
 
 	}
 
+}
+func detrmineReturn(byteValue string, funname string) string {
+	ydata := ""
+	line := ""
+	tfunname := ""
+	infun := false
+	if funname == "main" {
+		return ydata
+	}
+	for i := 0; i < len(byteValue); i++ {
+		if string(byteValue[i:i+1]) != "\n" {
+			line = line + string(byteValue[i:i+1])
+		}
+		if string(byteValue[i:i+1]) == "\n" {
+			xline := strings.TrimLeft(line, " ")
+			ld := strings.Split(xline, " ")
+			switch {
+			case ld[0] == "procedure" || ld[0] == "function":
+				ftmp := strings.Split(ld[1], "(")
+				tfunname = ftmp[0]
+				if funname == tfunname {
+					infun = true
+				}
+			case infun == true && ld[0] == "return(":
+				return ld[1]
+			}
+			line = ""
+		}
+	}
+	return ydata
+}
+
+func translateParm(xdata string) string {
+	ydata := ""
+
+	return ydata
 }
 
 func main() {
