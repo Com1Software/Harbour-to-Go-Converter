@@ -127,12 +127,17 @@ func BuildApp(sfile string) {
 					goFile = goFile + " {\n"
 				}
 				//------------------------------------------------------------------ RETURN
-			case ld[0] == "return" || lda[0] == "return":
+			case ld[0] == "return" || ld[0] == "return(" || lda[0] == "return":
 				fun = false
 				mainctl = false
+				rtn = detrmineReturn(byteValue, funname)
 				goFile = goFile + strings.Repeat(" ", 4)
-				goFile = goFile + "return\n"
-				goFile = goFile + "}\n\n"
+
+				goFile = goFile + "return"
+				if len(rtn) > 0 {
+					goFile = goFile + " ( " + rtn + " )"
+				}
+				goFile = goFile + "\n}\n\n"
 
 				//------------------------------------------------------------------ LOCAL
 			case ld[0] == "local":
@@ -144,17 +149,22 @@ func BuildApp(sfile string) {
 							goFile = goFile + "false"
 						case ld[ii] == ".t.":
 							goFile = goFile + "true"
+						case ld[ii] == "space(":
+							goFile = goFile + "strings.Repeat(   " + ld[ii+1]
 
 						default:
 							goFile = goFile + ld[ii]
 						}
 					}
 					goFile = goFile + "\n"
-				} else {
-					localWarning++
-					fmt.Printf("Warning  Local variable %S did NOT convert\n", ld[1])
 
+				} else {
+					if len(ld) > 1 {
+						localWarning++
+						fmt.Printf("Warning  Local variable %S did NOT convert\n", ld[1])
+					}
 				}
+
 				//------------------------------------------------------------------ ? PRINT
 			case ld[0] == "?" || lpn == true:
 				fmtctl = true
