@@ -150,7 +150,8 @@ func BuildApp(sfile string) {
 						case ld[ii] == ".t.":
 							goFile = goFile + "true"
 						case ld[ii] == "space(":
-							goFile = goFile + "strings.Repeat(   " + ld[ii+1]
+							asciiNum := 34
+							goFile = goFile + "strings.Repeat(" + string(asciiNum) + " " + string(asciiNum) + ld[ii+1] + ")"
 
 						default:
 							goFile = goFile + ld[ii]
