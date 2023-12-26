@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func BuildApp(sfile string) {
@@ -26,11 +28,15 @@ func BuildApp(sfile string) {
 	mainctl := false
 	mainset := false
 	localWarning := 0
+	impctl := false
 	fmtctl := false
+	timctl := false
+
 	fun := false
 	lineExtend := false
 	funname := ""
 	rtn := ""
+	asciiNum := 34
 	for i := 0; i < len(byteValue); i++ {
 		if string(byteValue[i:i+1]) != "\n" {
 
@@ -143,18 +149,68 @@ func BuildApp(sfile string) {
 			case ld[0] == "local":
 				if len(ld) > 2 {
 					goFile = goFile + strings.Repeat(" ", 4)
+					if len(ld) > 3 {
+						if ld[3] == "array(" {
+							goFile = goFile + "var "
+						}
+
+					}
 					for ii := 1; ii < len(ld); ii++ {
 						switch {
+						case ld[ii] == "time()":
+							goFile = goFile + "time.Now().String()[5:10]" + string(asciiNum) + "-" + string(asciiNum) + "time.Now().String()[0:4]"
+							timctl = true
+							impctl = true
+						case ld[ii] == "date()":
+							goFile = goFile + "time.Now().String()[11:19]"
+							timctl = true
+							impctl = true
+						case ld[ii] == "chr(":
+							goFile = goFile + "string(" + ld[ii+1] + ")"
+							ii = ii + 2
+						case ld[ii] == "substr(":
+							lx := ""
+							for iii := ii + 1; iii < len(ld)-1; iii++ {
+								lx = lx + ld[iii]
+							}
+							lxx := strings.Split(lx, ",")
+							a, err := strconv.Atoi(lxx[1])
+							if err != nil {
+								fmt.Println(err)
+							}
+							b, erra := strconv.Atoi(lxx[2])
+							if erra != nil {
+								fmt.Println(erra)
+							}
+							goFile = goFile + lxx[0] + "[" + lxx[1] + ":" + strconv.Itoa(a+b) + "]"
+							ii = len(ld)
+
 						case ld[ii] == ".f.":
 							goFile = goFile + "false"
 						case ld[ii] == ".t.":
 							goFile = goFile + "true"
+						case ld[ii] == "replicate(":
+							goFile = goFile + "strings.Repeat("
 						case ld[ii] == "space(":
-							asciiNum := 34
 							goFile = goFile + "strings.Repeat(" + string(asciiNum) + " " + string(asciiNum) + ","
+						case ld[ii] == "array(":
+							goFile = goFile + " [" + ld[ii+1] + "]string"
+							ii = len(ld)
 
 						default:
-							goFile = goFile + ld[ii]
+							ldctl := true
+							if ii+1 < len(ld) {
+								if ld[ii+1] == "array(" {
+									ldctl = false
+
+								}
+
+							}
+							if ldctl {
+								goFile = goFile + ld[ii]
+							}
+							ldctl = true
+
 						}
 					}
 					goFile = goFile + "\n"
@@ -169,6 +225,7 @@ func BuildApp(sfile string) {
 				//------------------------------------------------------------------ ? PRINT
 			case ld[0] == "?" || lpn == true:
 				fmtctl = true
+				impctl = true
 				goFile = goFile + strings.Repeat(" ", 4)
 				goFile = goFile + "fmt.Println("
 
@@ -197,11 +254,18 @@ func BuildApp(sfile string) {
 	} else {
 		top = top + funname + "\n\n"
 	}
-	if fmtctl {
+	if impctl {
 		top = top + "import (\n"
-		f := "fmt"
-		top = top + strings.Repeat(" ", 4)
-		top = top + fmt.Sprintf("%q\n", f)
+		if fmtctl {
+			f := "fmt"
+			top = top + strings.Repeat(" ", 4)
+			top = top + fmt.Sprintf("%q\n", f)
+		}
+		if timctl {
+			t := "time"
+			top = top + strings.Repeat(" ", 4)
+			top = top + fmt.Sprintf("%q\n", t)
+		}
 		top = top + ")\n\n"
 	}
 	goFile = top + goFile
@@ -270,6 +334,10 @@ func main() {
 	//----------------------------
 	case len(os.Args) == 1:
 		fmt.Printf("Missing File to Convert \n")
+		fmt.Println(time.Now().String())
+
+		x := time.Now().String()[11:19]
+		fmt.Println(x)
 		return
 	case len(os.Args) == 2:
 		sfile := os.Args[1]
