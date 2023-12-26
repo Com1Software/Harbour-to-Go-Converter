@@ -82,6 +82,10 @@ func BuildApp(sfile string) {
 				if lineExtend {
 					goFile = goFile + "\n"
 				} else {
+					if len(rtn) > 0 {
+						dtype := "string"
+						goFile = goFile + " " + dtype
+					}
 					goFile = goFile + " {\n"
 				}
 				//--------------------------------------------------------- FUNCTION
@@ -123,9 +127,11 @@ func BuildApp(sfile string) {
 						}
 					}
 				}
-				if len(rtn) > 0 {
-					dtype := "string"
-					goFile = goFile + " " + dtype
+				if lineExtend == false {
+					if len(rtn) > 0 {
+						dtype := "string"
+						goFile = goFile + " " + dtype
+					}
 				}
 				if lineExtend {
 					goFile = goFile + "\n"
@@ -158,7 +164,7 @@ func BuildApp(sfile string) {
 					for ii := 1; ii < len(ld); ii++ {
 						switch {
 						case ld[ii] == "time()":
-							goFile = goFile + "time.Now().String()[5:10]" + string(asciiNum) + "-" + string(asciiNum) + "time.Now().String()[0:4]"
+							goFile = goFile + "time.Now().String()[5:10]+" + string(asciiNum) + "-" + string(asciiNum) + "+time.Now().String()[0:4]"
 							timctl = true
 							impctl = true
 						case ld[ii] == "date()":
