@@ -223,8 +223,11 @@ func BuildApp(sfile string) {
 
 				} else {
 					if len(ld) > 1 {
+						goFile = goFile + strings.Repeat(" ", 4)
+						goFile = goFile + ld[1] + ":=" + string(asciiNum) + " " + string(asciiNum)
+						goFile = goFile + "\n"
 						localWarning++
-						fmt.Printf("Warning  Local variable %S did NOT convert\n", ld[1])
+						fmt.Printf("Warning  Local variable %S was set to string\n", ld[1])
 					}
 				}
 
