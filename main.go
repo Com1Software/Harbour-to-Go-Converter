@@ -31,6 +31,7 @@ func BuildApp(sfile string) {
 	impctl := false
 	fmtctl := false
 	timctl := false
+	osctl := true
 	coments := true
 	spaces := true
 	parmctl := false
@@ -292,6 +293,11 @@ func BuildApp(sfile string) {
 			top = top + strings.Repeat(" ", 4)
 			top = top + fmt.Sprintf("%q\n", t)
 		}
+		if osctl {
+			t := "os"
+			top = top + strings.Repeat(" ", 4)
+			top = top + fmt.Sprintf("%q\n", t)
+		}
 		top = top + ")\n\n"
 	}
 	goFile = top + goFile
@@ -348,8 +354,10 @@ func detrmineReturn(byteValue string, funname string) string {
 
 func translateParm(byteValue string, parmctl bool, funname string) string {
 	goFile := ""
+	bottom := ""
 	line := ""
 	asciiNum := 34
+	pc := 0
 	if parmctl {
 		if funname == "main" {
 			for i := 0; i < len(byteValue); i++ {
@@ -371,11 +379,17 @@ func translateParm(byteValue string, parmctl bool, funname string) string {
 								}
 								if bctl {
 									goFile = goFile + strings.Repeat(" ", 4)
+									bottom = bottom + strings.Repeat(" ", 8)
+									pc++
 									if ld[ii][len(ld[ii])-1:len(ld[ii])] == "," {
 										goFile = goFile + ld[ii][0:len(ld[ii])-1] + ":=" + string(asciiNum) + string(asciiNum) + "\n"
+										bottom = bottom + ld[ii][0:len(ld[ii])-1] + ":= os.Args[" + strconv.Itoa(pc) + "]\n"
 									} else {
 										goFile = goFile + ld[ii][0:len(ld[ii])] + ":=" + string(asciiNum) + string(asciiNum) + "\n"
+										bottom = bottom + ld[ii][0:len(ld[ii])] + ":= os.Args[" + strconv.Itoa(pc) + "]\n"
+
 									}
+
 								}
 								if ld[ii] == "main(" {
 									bctl = true
@@ -389,6 +403,11 @@ func translateParm(byteValue string, parmctl bool, funname string) string {
 			}
 		}
 	}
+	bottom = bottom + strings.Repeat(" ", 4)
+	bottom = bottom + "}\n"
+	goFile = goFile + strings.Repeat(" ", 4)
+	goFile = goFile + "if len(os.Args) == " + strconv.Itoa(pc+1) + " {\n"
+	goFile = goFile + bottom
 
 	return goFile
 }
