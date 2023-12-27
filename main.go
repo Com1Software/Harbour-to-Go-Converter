@@ -31,6 +31,9 @@ func BuildApp(sfile string) {
 	impctl := false
 	fmtctl := false
 	timctl := false
+	coments := true
+	spaces := true
+	parmctl := false
 
 	fun := false
 	lineExtend := false
@@ -56,6 +59,12 @@ func BuildApp(sfile string) {
 
 			fmt.Printf(" Line Segmnets %d %s \n ", len(ld), line)
 			switch {
+			//------------------------------------------------------------ Spaces
+			case len(strings.Trim(line, " ")) == 0 && spaces == true:
+				goFile = goFile + "\n"
+			//------------------------------------------------------------- Comments
+			case ld[0] == "//" && coments == true:
+				goFile = goFile + line + "\n"
 			//------------------------------------------------------------- EXTENTED LINE
 			case lineExtend == true:
 				goFile = goFile + strings.Repeat(" ", 4)
@@ -91,6 +100,7 @@ func BuildApp(sfile string) {
 				//--------------------------------------------------------- FUNCTION
 			case ld[0] == "procedure" || ld[0] == "function":
 				fun = true
+				parmctl = true
 				ftmp := strings.Split(ld[1], "(")
 				funname = ftmp[0]
 				if funname == "main" {
@@ -233,6 +243,8 @@ func BuildApp(sfile string) {
 
 				//------------------------------------------------------------------ ? PRINT
 			case ld[0] == "?" || lpn == true:
+				goFile = goFile + translateParm(byteValue, parmctl, funname)
+				parmctl = false
 				fmtctl = true
 				impctl = true
 				goFile = goFile + strings.Repeat(" ", 4)
@@ -246,6 +258,11 @@ func BuildApp(sfile string) {
 					}
 				}
 				goFile = goFile + ")\n"
+				//	default:
+				//		ftmp := strings.Split(line, ":=")
+				//		if len(ftmp) == 2 {
+				//			goFile = goFile + line + "\n"
+				//		}
 
 			}
 
@@ -293,7 +310,7 @@ func BuildApp(sfile string) {
 		fmt.Printf("Error %s\n", err)
 	}
 	if localWarning > 0 {
-		fmt.Printf("Warning %d Local variables did NOT convert\n", localWarning)
+		fmt.Printf("Warning %d Local variables set as string\n", localWarning)
 
 	}
 
@@ -329,10 +346,51 @@ func detrmineReturn(byteValue string, funname string) string {
 	return ydata
 }
 
-func translateParm(xdata string) string {
-	ydata := ""
+func translateParm(byteValue string, parmctl bool, funname string) string {
+	goFile := ""
+	line := ""
+	asciiNum := 34
+	if parmctl {
+		if funname == "main" {
+			for i := 0; i < len(byteValue); i++ {
+				if string(byteValue[i:i+1]) != "\n" {
+					line = line + string(byteValue[i:i+1])
+				}
+				if string(byteValue[i:i+1]) == "\n" {
+					xline := strings.TrimLeft(line, " ")
+					ld := strings.Split(xline, " ")
+					switch {
+					case ld[0] == "procedure" || ld[0] == "function":
+						ftmp := strings.Split(ld[1], "(")
+						funname = ftmp[0]
+						if funname == "main" {
+							bctl := false
+							for ii := 0; ii < len(ld); ii++ {
+								if ld[ii] == ")" {
+									bctl = false
+								}
+								if bctl {
+									goFile = goFile + strings.Repeat(" ", 4)
+									if ld[ii][len(ld[ii])-1:len(ld[ii])] == "," {
+										goFile = goFile + ld[ii][0:len(ld[ii])-1] + ":=" + string(asciiNum) + string(asciiNum) + "\n"
+									} else {
+										goFile = goFile + ld[ii][0:len(ld[ii])] + ":=" + string(asciiNum) + string(asciiNum) + "\n"
+									}
+								}
+								if ld[ii] == "main(" {
+									bctl = true
+								}
+							}
 
-	return ydata
+						}
+					}
+					line = ""
+				}
+			}
+		}
+	}
+
+	return goFile
 }
 
 func main() {
