@@ -37,6 +37,10 @@ func BuildApp(sfile string) {
 	parmctl := false
 	vList := [][]byte{}
 	fun := false
+	iflev := 0
+	elselev := 0
+	elseactive := false
+	ident := 4
 
 	lineExtend := false
 	funname := ""
@@ -61,6 +65,41 @@ func BuildApp(sfile string) {
 
 			fmt.Printf(" Line Segmnets %d %s \n ", len(ld), line)
 			switch {
+			//------------------------------------------------------------- If
+			case ld[0] == "if":
+				iflev++
+				tdata := ld[0]
+				for ii := 1; ii < len(ld); ii++ {
+					tdata = tdata + " " + ld[ii]
+					if ld[ii] == "=" {
+						tdata = tdata + "="
+					}
+				}
+				goFile = goFile + strings.Repeat(" ", ident)
+				goFile = goFile + tdata + " { \n"
+				ident++
+			// ------------------------------------------------------------- else
+			case ld[0] == "else":
+
+				goFile = goFile + strings.Repeat(" ", ident)
+				goFile = goFile + " } else {\n"
+
+				elselev++
+				elseactive = true
+
+			//------------------------------------------------------------- EndIf
+			case ld[0] == "endif":
+				ident--
+				goFile = goFile + strings.Repeat(" ", ident)
+				goFile = goFile + " } \n"
+				if elseactive {
+					elselev--
+					iflev--
+					elseactive = false
+				} else {
+					iflev--
+				}
+
 			//------------------------------------------------------------ Spaces
 			case len(strings.Trim(line, " ")) == 0 && spaces == true:
 				goFile = goFile + "\n"
@@ -251,7 +290,7 @@ func BuildApp(sfile string) {
 				parmctl = false
 				fmtctl = true
 				impctl = true
-				goFile = goFile + strings.Repeat(" ", 4)
+				goFile = goFile + strings.Repeat(" ", ident)
 				goFile = goFile + "fmt.Println("
 
 				for ii := 0; ii < len(ld); ii++ {
@@ -262,14 +301,15 @@ func BuildApp(sfile string) {
 					}
 				}
 				goFile = goFile + ")\n"
-				//	default:
-				//		ftmp := strings.Split(line, ":=")
-				//		fftmp := strings.Split(ftmp[0], "[")
-				//		if len(fftmp) > 0 {
-				//			if varListCheck(vList, strings.Trim(fftmp[0], " ")) {
-				//				goFile = goFile + line + "\n"
-				//			}
-				//		}
+			default:
+				ftmp := strings.Split(line, ":=")
+				fftmp := strings.Split(ftmp[0], "[")
+				if len(fftmp) > 0 {
+					if varListCheck(vList, strings.Trim(fftmp[0], " ")) {
+						goFile = goFile + strings.Repeat(" ", ident)
+						goFile = goFile + strings.Trim(line, " ") + "\n"
+					}
+				}
 
 			}
 
@@ -330,6 +370,7 @@ func BuildApp(sfile string) {
 	fmt.Printf("Variable List : %d\n", len(vList))
 
 	//	}
+	fmt.Printf(" IF %d ELSE %d ENDIF \n ", iflev, elselev)
 
 }
 func detrmineReturn(byteValue string, funname string) string {
@@ -390,7 +431,7 @@ func translateParm(byteValue string, parmctl bool, funname string) string {
 								}
 								if bctl {
 									goFile = goFile + strings.Repeat(" ", 4)
-									bottom = bottom + strings.Repeat(" ", 8)
+									bottom = bottom + strings.Repeat(" ", 5)
 									pc++
 									if ld[ii][len(ld[ii])-1:len(ld[ii])] == "," {
 										goFile = goFile + ld[ii][0:len(ld[ii])-1] + ":=" + string(asciiNum) + string(asciiNum) + "\n"
