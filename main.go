@@ -32,11 +32,12 @@ func BuildApp(sfile string) {
 	fmtctl := false
 	timctl := false
 	osctl := true
-	coments := true
-	spaces := true
+	coments := false
+	spaces := false
 	parmctl := false
-
+	vList := [][]byte{}
 	fun := false
+
 	lineExtend := false
 	funname := ""
 	rtn := ""
@@ -101,13 +102,14 @@ func BuildApp(sfile string) {
 				//--------------------------------------------------------- FUNCTION
 			case ld[0] == "procedure" || ld[0] == "function":
 				fun = true
-				parmctl = true
 				ftmp := strings.Split(ld[1], "(")
 				funname = ftmp[0]
 				if funname == "main" {
 					mainctl = true
 					mainset = true
 					lineExtend = false
+					parmctl = true
+
 				}
 				rtn = detrmineReturn(byteValue, funname)
 				goFile = goFile + "func " + funname + "("
@@ -164,6 +166,7 @@ func BuildApp(sfile string) {
 
 				//------------------------------------------------------------------ LOCAL
 			case ld[0] == "local":
+				vList = varList(vList, ld[1])
 				if len(ld) > 2 {
 					goFile = goFile + strings.Repeat(" ", 4)
 					if len(ld) > 3 {
@@ -261,8 +264,11 @@ func BuildApp(sfile string) {
 				goFile = goFile + ")\n"
 				//	default:
 				//		ftmp := strings.Split(line, ":=")
-				//		if len(ftmp) == 2 {
-				//			goFile = goFile + line + "\n"
+				//		fftmp := strings.Split(ftmp[0], "[")
+				//		if len(fftmp) > 0 {
+				//			if varListCheck(vList, strings.Trim(fftmp[0], " ")) {
+				//				goFile = goFile + line + "\n"
+				//			}
 				//		}
 
 			}
@@ -319,6 +325,11 @@ func BuildApp(sfile string) {
 		fmt.Printf("Warning %d Local variables set as string\n", localWarning)
 
 	}
+
+	//	if len(vList) > 0 {
+	fmt.Printf("Variable List : %d\n", len(vList))
+
+	//	}
 
 }
 func detrmineReturn(byteValue string, funname string) string {
@@ -402,14 +413,40 @@ func translateParm(byteValue string, parmctl bool, funname string) string {
 				}
 			}
 		}
+
+		bottom = bottom + strings.Repeat(" ", 4)
+		bottom = bottom + "}\n"
+		goFile = goFile + strings.Repeat(" ", 4)
+		goFile = goFile + "if len(os.Args) == " + strconv.Itoa(pc+1) + " {\n"
+		goFile = goFile + bottom
+
 	}
-	bottom = bottom + strings.Repeat(" ", 4)
-	bottom = bottom + "}\n"
-	goFile = goFile + strings.Repeat(" ", 4)
-	goFile = goFile + "if len(os.Args) == " + strconv.Itoa(pc+1) + " {\n"
-	goFile = goFile + bottom
 
 	return goFile
+}
+
+func varList(vList [][]byte, avar string) [][]byte {
+	af := true
+
+	for i := 0; i < len(vList); i++ {
+		if string(vList[i]) == avar {
+			af = false
+		}
+	}
+	if af {
+		vList = append(vList, []byte(avar))
+	}
+	return vList
+}
+
+func varListCheck(vList [][]byte, avar string) bool {
+	af := false
+	for i := 0; i < len(vList); i++ {
+		if string(vList[i]) == avar {
+			af = true
+		}
+	}
+	return af
 }
 
 func main() {
